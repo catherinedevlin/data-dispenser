@@ -50,4 +50,13 @@ keyword to the ``Source`` constructor limits the rows returned from each
 source.  For file paths with wildcards, the limit applies to each file
 source, not to the number of file sources.
 
+Code
+----
+
+https://pypi.python.org/pypi/data_dispenser
+
+Source and bug tracker
+----------------------
+
+https://github.com/catherinedevlin/data-dispenser
 
