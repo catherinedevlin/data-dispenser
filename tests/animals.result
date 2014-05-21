@@ -1,0 +1,12 @@
+[{'name': 'Alfred',
+  'species': 'wart hog',
+  'kg': '22',
+  'notes': 'loves turnips'},
+ {'name': 'Gertrude',
+  'species': 'polar bear',
+  'kg': '312.7',
+  'notes': 'deep thinker'},
+ {'name': 'Emily',
+  'species': 'salamander',
+  'kg': '0.3',
+  'notes': ''}]

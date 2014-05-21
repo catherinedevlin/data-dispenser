@@ -1,0 +1,13 @@
+[{'common name': 'Northern Cardinal',
+  'scientific name': 'Carnidalis cardinalis',
+  'length in cm': 21,
+  'state': [OrderedDict([('name', 'Illinois'), ('abbrev', 'IL')]),
+            OrderedDict([('name', 'Indiana'), ('abbrev', 'IN')]),
+            OrderedDict([('name', 'Kentucky'), ('abbrev', 'KY')]),
+            OrderedDict([('name', 'North Carolina'), ('abbrev', 'NC')]),
+            OrderedDict([('name', 'Ohio'), ('abbrev', 'OH')]),
+            OrderedDict([('name', 'Virginia'), ('abbrev', 'VA')]),
+            OrderedDict([('name', 'West Virginia'), ('abbrev', 'WV')])]},
+ {'common name': 'Great Northern Loon',
+  'scientific name': 'Gavia immer',
+  'state': [OrderedDict([('name', 'Minnesota'), ('abbrev', 'MN')])]}]

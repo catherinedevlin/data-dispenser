@@ -1,0 +1,3 @@
+[OrderedDict([('name', 'The Empire Strikes Back'), ('rating', 9.7)]),
+ OrderedDict([('name', 'Das Boot'), ('rating', 8.4)]),
+ OrderedDict([('name', 'Highlander 2'), ('rating', -2.4)])]

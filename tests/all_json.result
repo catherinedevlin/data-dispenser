@@ -1,0 +1,9 @@
+[[OrderedDict([('name', 'soup'), ('cost', 4.99)]),
+  OrderedDict([('name', 'sweet potatoes'), ('cost', 4.99)]),
+  {'name': 'nuts',
+   'warning': 'contains nuts',
+   'cost': 2.95}],
+ [OrderedDict([('kg', '5.97219E25'), ('name', 'Earth'), ('orbits', 'Sun')]),
+  OrderedDict([('kg', '1989100000E21'), ('name', 'Sun')]),
+  OrderedDict([('kg', '1898600E21'), ('name', 'Jupiter'), ('orbits', 'Sun')]),
+  OrderedDict([('kg', '48E21'), ('name', 'Europa'), ('orbits', 'Jupiter')])]]

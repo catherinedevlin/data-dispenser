@@ -1,0 +1,2 @@
+[OrderedDict([('state', 'Ohio'), ('capital', 'Columbus')]),
+ OrderedDict([('state', 'Minnesota'), ('capital', 'Saint Paul')])]

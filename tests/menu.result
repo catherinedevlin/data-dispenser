@@ -1,0 +1,3 @@
+[OrderedDict([('name', 'soup'), ('cost', 4.99)]),
+ OrderedDict([('name', 'sweet potatoes'), ('cost', 4.99)]),
+ OrderedDict([('name', 'nuts'), ('warning', 'contains nuts'), ('cost', 2.95)])]
