@@ -39,7 +39,7 @@ Data input formats supported
 Multiple files
 ..............
 
-Multiple file paths and/or file paths with wildcards will be
+File paths with wildcards will be
 effectively concatenated into one large data source.
 
 Load limits
