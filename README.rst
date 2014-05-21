@@ -2,16 +2,6 @@
 data-dispenser
 ==============
 
-.. image:: https://badge.fury.io/py/data_dispenser.png
-    :target: http://badge.fury.io/py/data_dispenser
-    
-.. image:: https://travis-ci.org/catherinedevlin/data_dispenser.png?branch=master
-        :target: https://travis-ci.org/catherinedevlin/data_dispenser
-
-.. image:: https://pypip.in/d/data_dispenser/badge.png
-        :target: https://crate.io/packages/data_dispenser?version=latest
-
-
 Given a source of rowlike data, acts as a generator of OrderedDicts.
 
     Usage::
@@ -37,7 +27,7 @@ Will work most reliably against filenames with extensions that indicate
 the data format; otherwise data-dispenser may guess the input format wrong.
 
 Data input formats supported
-..........------............
+............................
 
 * csv
 * yaml (requires ``pyyaml``)
