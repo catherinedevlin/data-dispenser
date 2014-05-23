@@ -21,7 +21,6 @@ Data source types supported
 * open file objects
 * pymongo Collection objects
 * strings interpretable as data 
-* actual Python data objects
 
 Will work most reliably against filenames with extensions that indicate
 the data format; otherwise data-dispenser may guess the input format wrong.
