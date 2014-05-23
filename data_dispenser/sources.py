@@ -41,9 +41,10 @@ if yaml:
         OrderedLoader.add_constructor(
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
             lambda loader, node: object_pairs_hook(loader.construct_pairs(node)))
+        import ipdb; ipdb.set_trace()
         for row in yaml.load(stream, OrderedLoader):
             yield row
-        # TODO: what if the yaml resolves to a dict?
+        # TODO: how would _ensure_rows work with this?
 else:
     def ordered_yaml_load(*arg, **kwarg):
         raise ImportError('pyyaml not installed')
@@ -90,6 +91,15 @@ def _first_list_in(element):
         if child_list_found:
             return child_list_found
 
+def _ensure_rows(result):
+    """data_dispenser is for rowlike sources.  If the data source
+       evaluates to a single dict instead of a listlike object,
+       return a list (that contains the dict as its sole row). """
+    if isinstance(result, dict):
+        result = [result, ]
+    return result
+
+
 def _eval_xml(target):
     root = et.parse(target).getroot()
     data = _element_to_odict(root)
@@ -98,11 +108,13 @@ def _eval_xml(target):
 
 def json_loader(target):
     result = json.load(target, object_pairs_hook=OrderedDict)
+    result = _ensure_rows(result)
     return iter(result)
 json_loader.__name__ = 'json_loader'
 
 def pickle_loader(target):
     result = pickle.load(target)
+    result = _ensure_rows(result)
     return iter(result)
 pickle_loader.__name__ = 'pickle_loader'
 
@@ -233,7 +245,7 @@ class Source(object):
     def _source_is_glob(self, sources):
         subsources = [Source(s, limit=self.limit) for s in sources]
         self.limit = None  # impose limit only on the subsources
-        self.generator = itertools.chain(list(s) for s in subsources)
+        self.generator = itertools.chain.from_iterable(subsources)
 
     def _source_is_open_file(self, src):
         if hasattr(src, 'name'):
