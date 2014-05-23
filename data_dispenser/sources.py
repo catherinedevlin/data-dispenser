@@ -41,10 +41,9 @@ if yaml:
         OrderedLoader.add_constructor(
             yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
             lambda loader, node: object_pairs_hook(loader.construct_pairs(node)))
-        import ipdb; ipdb.set_trace()
-        for row in yaml.load(stream, OrderedLoader):
-            yield row
-        # TODO: how would _ensure_rows work with this?
+        result = yaml.load(stream, OrderedLoader)
+        result = _ensure_rows(result)
+        return iter(result)
 else:
     def ordered_yaml_load(*arg, **kwarg):
         raise ImportError('pyyaml not installed')
