@@ -35,6 +35,8 @@ setup(
     extras_require = {
         'Mongo': ['pymongo',],
         'yaml': ['pyyaml',],
+        'web': ['requests',],
+        'excel': ['xlrd,'],
         },
     license="MIT",
     zip_safe=False,

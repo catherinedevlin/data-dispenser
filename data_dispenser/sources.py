@@ -27,6 +27,16 @@ try:
 except ImportError:
     logging.info("Could not import Collection from pymongo; is it installed?")
     MongoCollection = None.__class__
+try:
+    import requests
+except ImportError:
+    logging.info("Could not import ``requests``, will not load from URLs")
+    requests = None
+try:
+    import xlrd
+except ImportError:
+    logging.info("Could not import ``xlrd``, will not load from .xls")
+    requests = None
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
@@ -142,6 +152,14 @@ def _open(filename):
     input_source = open(filename, file_mode)
     return input_source
 
+class NamedIter(object):
+    "Hack to let us assign attributes to an iterator"
+
+    def __init__(self, unnamed_iterator):
+        self.__iter__ = unnamed_iterator.__iter__
+        self.__next__ = unnamed_iterator.__next__
+
+
 class Source(object):
     """
     A universal data generator that returns one "row" at
@@ -190,7 +208,8 @@ class Source(object):
     table_count = 0
 
     def _source_is_generator(self, src):
-        self.table_name = src.name
+        if hasattr(src, 'name'):
+            self.table_name = src.name
         self.generator = src
         return
 
@@ -241,7 +260,7 @@ class Source(object):
         input_source = _open(src)
         self._deserialize(input_source)
 
-    def _source_is_glob(self, sources):
+    def _multiple_sources(self, sources):
         subsources = [Source(s, limit=self.limit) for s in sources]
         self.limit = None  # impose limit only on the subsources
         self.generator = itertools.chain.from_iterable(subsources)
@@ -251,6 +270,26 @@ class Source(object):
             self.table_name = src.name
         self.deserializers = self.eval_funcs_by_ext['*']
         self._deserialize(src)
+
+    def _source_is_excel(self, spreadsheet_filename):
+        if not xlrd:
+            raise ImportError('must ``pip install xlrd``')
+        workbook = xlrd.open_workbook(spreadsheet_filename)
+        generators = []
+        for sheet in workbook.sheets():
+            data = []
+            for row_n in range(sheet.nrows):
+                headings = [cell.value for cell in sheet.row(row_n)]
+                if max(bool(h) for h in headings):
+                    break
+            while row_n < sheet.nrows:
+                row_values = [c.value for c in sheet.row(row_n)]
+                row = list(zip(headings, row_values))
+                data.append(row)
+                row_n += 1
+            generator = NamedIter(iter(data))
+            generators.append(generator)
+        self._multiple_sources(generators)
 
     def __init__(self, src, limit=None):
         self.counter = 0
@@ -269,10 +308,15 @@ class Source(object):
             return
         try:
             if os.path.isfile(src):
-                self._source_is_path(src)
+                if src.endswith('.xls'):
+                    self._source_is_excel(src)
+                else:
+                    self._source_is_path(src)
                 return
         except TypeError:
             pass
+        if hasattr(src, 'startswith') and src.startswith('http'):
+            self._source_is_url(src)
         try:
             data = eval(src)
             self._source_is_generator(data)
@@ -282,7 +326,7 @@ class Source(object):
         try:
             sources = glob.glob(src)
             if sources:
-                self._source_is_glob(sources)
+                self._multiple_sources(sources)
                 return
         except:
             pass

@@ -84,6 +84,14 @@ class Testdata_dispenser(unittest.TestCase):
     def tearDown(self):
         pass
 
+class TestReadFromWeb(unittest.TestCase):
+
+    def test_read(self):
+        url = 'http://www.whitehouse.gov/sites/default/files/omb/budget/fy2015/assets/hist01z1.xls'
+        src = sources.Source(url)
+        with open('budgetsummary.xls') as infile:
+            expectation = eval(infile.read())
+        self.assertEqual(list(src), expectation, 'Reading %s' % url)
 
 if __name__ == '__main__':
     unittest.main()
