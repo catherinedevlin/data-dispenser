@@ -9,7 +9,7 @@ from collections import OrderedDict
 from io import StringIO
 import csv
 import doctest
-import glob
+import globcs
 import itertools
 import json
 import logging
@@ -135,11 +135,12 @@ def _eval_file_obj(target):
     else:
         yield result
 
-def _eval_csv(target):
+def _eval_csv(target, fieldnames=None):
     """
     Yields OrderedDicts from a CSV string
     """
-    reader = csv.DictReader(target)
+    # TODO: automatic FieldA, FieldB, etc
+    reader = csv.DictReader(target, fieldnames=fieldnames)
     for row in reader:
         yield OrderedDict((k, row[k]) for k in reader.fieldnames)
 
@@ -196,7 +197,7 @@ class Source(object):
                          '.json': [json_loader, ],
                          '.yaml': [ordered_yaml_load, ],
                          '.csv': [_eval_csv, ],
-                         '.xml': [_eval_xml, ],
+                         '.xml': [_eval_xml, ],e
                          '.pickle': [pickle_loader, ],
                          }
     eval_funcs_by_ext['*'] = eval_funcs_by_ext['.pickle'] + \
@@ -291,7 +292,7 @@ class Source(object):
             generators.append(generator)
         self._multiple_sources(generators)
 
-    def __init__(self, src, limit=None):
+    def __init__(self, src, limit=None, fieldnames=None):
         self.counter = 0
         self.limit = limit
         self.deserializers = []
