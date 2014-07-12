@@ -9,7 +9,7 @@ from collections import OrderedDict
 from io import StringIO
 import csv
 import doctest
-import globcs
+import glob
 import itertools
 import json
 import logging
@@ -197,7 +197,7 @@ class Source(object):
                          '.json': [json_loader, ],
                          '.yaml': [ordered_yaml_load, ],
                          '.csv': [_eval_csv, ],
-                         '.xml': [_eval_xml, ],e
+                         '.xml': [_eval_xml, ],
                          '.pickle': [pickle_loader, ],
                          }
     eval_funcs_by_ext['*'] = eval_funcs_by_ext['.pickle'] + \
@@ -278,17 +278,20 @@ class Source(object):
         workbook = xlrd.open_workbook(spreadsheet_filename)
         generators = []
         for sheet in workbook.sheets():
+            headings = ["Col%d" % c for c in range(1, sheet.ncols + 1)]
             data = []
             for row_n in range(sheet.nrows):
-                headings = [cell.value for cell in sheet.row(row_n)]
-                if max(bool(h) for h in headings):
+                row_has_data = max(bool(v) for v in sheet.row_values(row_n))
+                if row_has_data:
+                    headings = [heading if heading else default_heading
+                                for (heading, default_heading) 
+                                in itertools.zip_longest(sheet.row_values(row_n), headings)]
+                    row_n += 1
                     break
-            while row_n < sheet.nrows:
-                row_values = [c.value for c in sheet.row(row_n)]
-                row = list(zip(headings, row_values))
-                data.append(row)
-                row_n += 1
+            data = [OrderedDict(zip(headings, sheet.row_values(r)))
+                                for r in range(row_n,sheet.nrows)]
             generator = NamedIter(iter(data))
+            generator.name = "%s-%s" % (spreadsheet_filename, sheet.name)
             generators.append(generator)
         self._multiple_sources(generators)
 

@@ -33,10 +33,10 @@ setup(
     install_requires=[
     ],
     extras_require = {
-        'Mongo': ['pymongo',],
-        'yaml': ['pyyaml',],
-        'web': ['requests',],
-        'excel': ['xlrd,'],
+        'Mongo': ['pymongo>=2.7', ],
+        'yaml': ['pyyaml>=3.11', ],
+        'web': ['requests>=2.3', ],
+        'excel': ['xlrd>0.9.3', ],
         },
     license="MIT",
     zip_safe=False,
