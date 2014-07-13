@@ -10,7 +10,8 @@ for (filename, stem, ext) in split_filenames():
     src = Source(filename)
     src._dump('%s.result' % stem)
     src = Source(filename)
-    with open('%s.pickle' % stem, 'wb') as outfile:
-        pickle.dump(list(src), outfile)
+    if ext != '.xls':
+        with open('%s.pickle' % stem, 'wb') as outfile:
+            pickle.dump(list(src), outfile)
 
 

@@ -42,8 +42,9 @@ class Testdata_dispenser(unittest.TestCase):
         pass
 
     def test_filenames(self):
+
         for (filename, stem, ext) in split_filenames():
-            print(filename)
+            print("\n\n\nTesting %s\n***********\n\n\n" % filename)
             expectation_filename = '%s.result' % stem
             with open(expectation_filename) as infile:
                 expectation = eval(infile.read())
@@ -55,6 +56,9 @@ class Testdata_dispenser(unittest.TestCase):
             src = sources.Source(filename, limit=1)
             self.assertEqual(list(src), expectation[:1],
                              msg='%s, limiting to 1')
+
+            if ext == 'xls':
+                continue
 
             # now test against an open file object
             with sources._open(filename) as infile:
@@ -84,14 +88,6 @@ class Testdata_dispenser(unittest.TestCase):
     def tearDown(self):
         pass
 
-class TestReadFromWeb(unittest.TestCase):
-
-    def test_read(self):
-        url = 'http://www.whitehouse.gov/sites/default/files/omb/budget/fy2015/assets/hist01z1.xls'
-        src = sources.Source(url)
-        with open('budgetsummary.xls') as infile:
-            expectation = eval(infile.read())
-        self.assertEqual(list(src), expectation, 'Reading %s' % url)
 
 if __name__ == '__main__':
     unittest.main()

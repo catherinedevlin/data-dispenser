@@ -16,6 +16,7 @@ import logging
 import os.path
 import pickle
 import pprint
+import sys
 import xml.etree.ElementTree as et
 try:
     import yaml
@@ -36,7 +37,7 @@ try:
     import xlrd
 except ImportError:
     logging.info("Could not import ``xlrd``, will not load from .xls")
-    requests = None
+    xlrd = None
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
@@ -196,6 +197,7 @@ class Source(object):
     eval_funcs_by_ext = {'.py': [_eval_file_obj, ],
                          '.json': [json_loader, ],
                          '.yaml': [ordered_yaml_load, ],
+                         '.yml': [ordered_yaml_load, ],
                          '.csv': [_eval_csv, ],
                          '.xml': [_eval_xml, ],
                          '.pickle': [pickle_loader, ],
@@ -266,6 +268,17 @@ class Source(object):
         self.limit = None  # impose limit only on the subsources
         self.generator = itertools.chain.from_iterable(subsources)
 
+    def _source_is_url(self, src):
+        if not requests:
+            raise ImportError('must ``pip install requests to read from web``')
+        (core_url, ext) = os.path.splitext(src)
+        ext = ext.lower()
+        response = requests.get(src)
+        response.headers["Content-Type"].split(";")
+        self.deserializers = self.eval_funcs_by_ext[ext or '*']
+        content = response.content.decode(response.encoding or response.apparent_encoding)
+        self._deserialize(StringIO(content))
+
     def _source_is_open_file(self, src):
         if hasattr(src, 'name'):
             self.table_name = src.name
@@ -304,6 +317,10 @@ class Source(object):
         if isinstance(src, MongoCollection):
             self._source_is_mongo(src)
             return
+        if hasattr(src, 'startswith') and (
+                src.startswith("http://") or src.startswith("https://")):
+            self._source_is_url(src)
+            return
         if hasattr(src, 'read'):    # open file
             self._source_is_open_file(src)
             return
@@ -323,6 +340,8 @@ class Source(object):
             self._source_is_url(src)
         try:
             data = eval(src)
+            if not hasattr(data, '__next__'):
+                data = iter(data)
             self._source_is_generator(data)
             return
         except:
@@ -359,4 +378,8 @@ class Source(object):
 
 
 if __name__ == '__main__':
-    doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
+    if len(sys.argv) > 1:
+        for target in sys.argv[1:]:
+            pprint.pprint(list(Source(target)))
+    else:
+        doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
