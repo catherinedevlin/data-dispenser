@@ -6,7 +6,7 @@ a source of row-like data, acts as a generator returning
 OrderedDicts for each row.
 """
 from collections import OrderedDict
-from io import StringIO
+from io import StringIO, BytesIO
 import csv
 import doctest
 import glob
@@ -274,10 +274,14 @@ class Source(object):
         (core_url, ext) = os.path.splitext(src)
         ext = ext.lower()
         response = requests.get(src)
-        response.headers["Content-Type"].split(";")
+        if src.endswith('.xls'):
+            return self._source_is_excel(response.content)
         self.deserializers = self.eval_funcs_by_ext[ext or '*']
-        content = response.content.decode(response.encoding or response.apparent_encoding)
-        self._deserialize(StringIO(content))
+        if ext == '.pickle':
+            self._deserialize(BytesIO(response.content))
+        else:
+            content = response.content.decode(response.encoding or response.apparent_encoding)
+            self._deserialize(StringIO(content))
 
     def _source_is_open_file(self, src):
         if hasattr(src, 'name'):
@@ -285,10 +289,15 @@ class Source(object):
         self.deserializers = self.eval_funcs_by_ext['*']
         self._deserialize(src)
 
-    def _source_is_excel(self, spreadsheet_filename):
+    def _source_is_excel(self, spreadsheet):
         if not xlrd:
             raise ImportError('must ``pip install xlrd``')
-        workbook = xlrd.open_workbook(spreadsheet_filename)
+        if len(spreadsheet) < 84 and spreadsheet.endswith('xls'):
+            workbook = xlrd.open_workbook(spreadsheet)
+            name = spreadsheet
+        else:
+            workbook = xlrd.open_workbook(file_contents=spreadsheet)
+            name = "excel"
         generators = []
         for sheet in workbook.sheets():
             headings = ["Col%d" % c for c in range(1, sheet.ncols + 1)]
@@ -304,7 +313,7 @@ class Source(object):
             data = [OrderedDict(zip(headings, sheet.row_values(r)))
                                 for r in range(row_n,sheet.nrows)]
             generator = NamedIter(iter(data))
-            generator.name = "%s-%s" % (spreadsheet_filename, sheet.name)
+            generator.name = "%s-%s" % (name, sheet.name)
             generators.append(generator)
         self._multiple_sources(generators)
 

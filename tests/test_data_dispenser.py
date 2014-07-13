@@ -9,9 +9,12 @@ Tests for `universal_data_loader` module.
 """
 
 import unittest
+import subprocess
 from collections import OrderedDict
 import pymongo
 import datetime
+import time
+import requests
 
 from data_dispenser import sources
 from file_stems import split_filenames
@@ -36,18 +39,51 @@ class TestReadMongo(unittest.TestCase):
         self.tbl.drop()
 
 
+def expectations():
+    for (filename, stem, ext) in split_filenames():
+        print("\n\n\nTesting %s\n***********\n\n\n" % filename)
+        expectation_filename = '%s.result' % stem
+        with open(expectation_filename) as infile:
+            expected = eval(infile.read())
+        yield (filename, stem, ext, expected)
+
+
+class TestURLreader(unittest.TestCase):
+
+    def setUp(self):
+        self.webserver = subprocess.Popen("python -m http.server".split())
+
+    def tearDown(self):
+        self.webserver.terminate()
+
+    def keep_trying(self, url):
+        # local test webserver doesn't like being overtasked.
+        for tries in range(5):
+            try:
+                src = sources.Source(url)
+                return src
+            except requests.exceptions.ConnectionError as e:
+                if "Max retries exceeded" not in str(e):
+                    raise(e)
+                time.sleep(2**tries)
+                remembered_err = e
+        raise(remembered_err)
+
+    def test_filenames(self):
+        for (filename, stem, ext, expectation) in expectations():
+            url = "http://127.0.0.1:8000/%s" % filename
+            src = self.keep_trying(url)
+            self.assertEqual(list(src), expectation,
+                             msg="%s, from local webserver" % filename)
+        
+
 class Testdata_dispenser(unittest.TestCase):
 
     def setUp(self):
         pass
 
     def test_filenames(self):
-
-        for (filename, stem, ext) in split_filenames():
-            print("\n\n\nTesting %s\n***********\n\n\n" % filename)
-            expectation_filename = '%s.result' % stem
-            with open(expectation_filename) as infile:
-                expectation = eval(infile.read())
+        for (filename, stem, ext, expectation) in expectations():
             src = sources.Source(filename)
             self.assertEqual(list(src), expectation,
                              msg="%s, by filename" % filename)

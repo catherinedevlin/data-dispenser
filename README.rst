@@ -21,6 +21,7 @@ Data source types supported
 * open file objects
 * pymongo Collection objects
 * strings interpretable as data 
+* URLs
 
 Will work most reliably against filenames with extensions that indicate
 the data format; otherwise data-dispenser may guess the input format wrong.
@@ -33,6 +34,7 @@ Data input formats supported
 * json
 * pickle
 * ``eval``-able Python
+* xls
 * xml (experimental)
 
 Multiple files
