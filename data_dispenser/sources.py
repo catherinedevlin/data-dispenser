@@ -104,9 +104,25 @@ def _first_list_in(element):
 def _ensure_rows(result):
     """data_dispenser is for rowlike sources.  If the data source
        evaluates to a single dict instead of a listlike object,
-       return a list (that contains the dict as its sole row). """
+       transform a dict of dicts into a list of dicts, or 
+       return a list (that contains the dict as its sole row).
+       >>> pprint.pprint(_ensure_rows({"a": 1, "b": 2}))
+       [{'a': 1, 'b': 2}]
+       >>> pprint.pprint(_ensure_rows({"a": {"a1": 1, "a2": 2}, "b": {"b1": 1, "b2": 2}}))
+       [{'a1': 1, 'a2': 2, 'name_': 'a'}, {'b1': 1, 'b2': 2, 'name_': 'b'}]
+       
+       otherwise just don't mess with it
+       >>> pprint.pprint(_ensure_rows([{"a1": 1, "a2": 2}, {"b1": 1, "b2": 2}]))
+       [{'a1': 1, 'a2': 2}, {'b1': 1, 'b2': 2}]
+    """
     if isinstance(result, dict):
-        result = [result, ]
+        if not result:
+            result = []
+        # if it's a dict of dicts, convert to a list of dicts
+        if not [s for s in result.values() if not hasattr(s, 'keys')]:
+            result = [dict(name_=k, **result[k]) for k in result]
+        else:
+            result = [result, ]
     return result
 
 

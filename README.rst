@@ -21,7 +21,7 @@ Data source types supported
 * open file objects
 * pymongo Collection objects
 * strings interpretable as data 
-* URLs
+* URLs beginning with http:// or https://
 
 Will work most reliably against filenames with extensions that indicate
 the data format; otherwise data-dispenser may guess the input format wrong.

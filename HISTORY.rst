@@ -13,3 +13,10 @@ History
 
 * Fixed bugs in handling non-listlike YAML files
 
+0.2.0 (2014-07-14)
+++++++++++++++++++
+
+* Support .xls 
+* Support URLs
+* Support wildcards
+

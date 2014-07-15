@@ -2,14 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import glob
+import os.path
 
+test_filenames = os.path.join(os.path.dirname(__file__), '*.*')
 def split_filenames():
-    for filename in glob.glob('*.*'):
+    for filename in glob.glob(test_filenames):
         if not filename.endswith('.py') and \
         not filename.endswith('.pyc') and \
         not filename.endswith('.result') and \
         not filename.startswith('__'):
             (stem, ext) = filename.split('.')
-            yield (filename, stem, ext)
+            yield (os.path.split(filename)[1], stem, ext)
+            
 
 

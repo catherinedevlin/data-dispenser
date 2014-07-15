@@ -13,11 +13,12 @@ import subprocess
 from collections import OrderedDict
 import pymongo
 import datetime
+import os.path
 import time
 import requests
 
 from data_dispenser import sources
-from file_stems import split_filenames
+from tests.file_stems import split_filenames
 
 class TestReadMongo(unittest.TestCase):
 
@@ -42,16 +43,22 @@ class TestReadMongo(unittest.TestCase):
 def expectations():
     for (filename, stem, ext) in split_filenames():
         print("\n\n\nTesting %s\n***********\n\n\n" % filename)
-        expectation_filename = '%s.result' % stem
+        expectation_filename = here('%s.result' % stem)
         with open(expectation_filename) as infile:
             expected = eval(infile.read())
         yield (filename, stem, ext, expected)
 
 
+def here(filename):
+    return os.path.join(os.path.dirname(__file__), filename)
+
+
 class TestURLreader(unittest.TestCase):
 
     def setUp(self):
-        self.webserver = subprocess.Popen("python -m http.server".split())
+        command = "python -m http.server"
+        self.webserver = subprocess.Popen(command.split(),
+                                          cwd=os.path.dirname(__file__))
 
     def tearDown(self):
         self.webserver.terminate()
@@ -73,7 +80,8 @@ class TestURLreader(unittest.TestCase):
         for (filename, stem, ext, expectation) in expectations():
             url = "http://127.0.0.1:8000/%s" % filename
             src = self.keep_trying(url)
-            self.assertEqual(list(src), expectation,
+            result = list(src)
+            self.assertEqual(result, expectation,
                              msg="%s, from local webserver" % filename)
         
 
@@ -84,12 +92,13 @@ class Testdata_dispenser(unittest.TestCase):
 
     def test_filenames(self):
         for (filename, stem, ext, expectation) in expectations():
-            src = sources.Source(filename)
-            self.assertEqual(list(src), expectation,
+            src = sources.Source(here(filename))
+            result = list(src)
+            self.assertEqual(result, expectation,
                              msg="%s, by filename" % filename)
 
             # check that we can limit result size
-            src = sources.Source(filename, limit=1)
+            src = sources.Source(here(filename), limit=1)
             self.assertEqual(list(src), expectation[:1],
                              msg='%s, limiting to 1')
 
@@ -97,27 +106,27 @@ class Testdata_dispenser(unittest.TestCase):
                 continue
 
             # now test against an open file object
-            with sources._open(filename) as infile:
+            with sources._open(here(filename)) as infile:
                 src = sources.Source(infile)
                 self.assertEqual(list(src), expectation,
                                  msg="%s, by file obj" % filename)
 
             # now test against the text contents
             if not filename.endswith('.pickle'):
-                with open(filename) as infile:
+                with open(here(filename)) as infile:
                     src = sources.Source(infile.read())
                     self.assertEqual(list(src), expectation,
                                      msg="%s, by contents" % filename)
 
     def test_glob(self):
-        with open('all_json.result') as infile:
+        with open(here('all_json.result')) as infile:
             expectation = eval(infile.read())
-        src = sources.Source('*.json')
+        src = sources.Source(here('*.json'))
         self.assertEqual(list(src), expectation,
                          'glob on *.json')
-        with open('all_json_limit_1.result') as infile:
+        with open(here('all_json_limit_1.result')) as infile:
             expectation = eval(infile.read())
-        src = sources.Source('*.json', limit=1)
+        src = sources.Source(here('*.json'), limit=1)
         self.assertEqual(list(src), expectation,
                          'glob on *.json. limit=1')
 

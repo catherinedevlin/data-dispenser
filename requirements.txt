@@ -1,0 +1,6 @@
+# not actually imported into setup.py; these are the optional
+# requirements, but required for Travis to test
+pymongo>=2.7
+pyyaml>=3.11
+requests>=2.3
+xlrd>0.9.3
