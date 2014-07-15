@@ -372,7 +372,7 @@ class Source(object):
         except:
             pass
         try:
-            sources = glob.glob(src)
+            sources = sorted(glob.glob(src))
             if sources:
                 self._multiple_sources(sources)
                 return
