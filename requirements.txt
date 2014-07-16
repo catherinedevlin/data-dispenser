@@ -1,0 +1,6 @@
+# actually only firm requirements for testing
+pymongo>=2.7
+pyyaml>=3.11
+requests>=2.3
+xlrd>=0.9.3
+
