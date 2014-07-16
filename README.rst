@@ -2,6 +2,9 @@
 data-dispenser
 ==============
 
+.. image: https://travis-ci.org/catherinedevlin/data-dispenser.svg?branch=master
+   :alt: Travis build status
+
 Given a source of rowlike data, acts as a generator of OrderedDicts.
 
     Usage::
