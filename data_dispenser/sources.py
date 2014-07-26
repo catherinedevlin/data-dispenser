@@ -41,7 +41,7 @@ except ImportError:
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
-                          object_pairs_hook=OrderedDict):
+                          object_pairs_hook=OrderedDict, **kwargs):
         """
         Preserves order with OrderedDict as yaml is loaded
         Thanks to coldfix
@@ -56,7 +56,7 @@ if yaml:
         result = _ensure_rows(result)
         return iter(result)
 else:
-    def ordered_yaml_load(*arg, **kwarg):
+    def ordered_yaml_load(*args, **kwargs):
         raise ImportError('pyyaml not installed')
 
 def _element_to_odict(element):
@@ -125,26 +125,27 @@ def _ensure_rows(result):
             result = [result, ]
     return result
 
+# begin deserializers
 
-def _eval_xml(target):
+def _eval_xml(target, **kwargs):
     root = et.parse(target).getroot()
     data = _element_to_odict(root)
     data = _first_list_in(data)
     return iter(data)
 
-def json_loader(target):
+def json_loader(target, **kwargs):
     result = json.load(target, object_pairs_hook=OrderedDict)
     result = _ensure_rows(result)
     return iter(result)
 json_loader.__name__ = 'json_loader'
 
-def pickle_loader(target):
+def pickle_loader(target, **kwargs):
     result = pickle.load(target)
     result = _ensure_rows(result)
     return iter(result)
 pickle_loader.__name__ = 'pickle_loader'
 
-def _eval_file_obj(target):
+def _eval_file_obj(target, **kwargs):
     result = eval(target.read())
     if isinstance(result, list):
         for itm in result:
@@ -152,14 +153,30 @@ def _eval_file_obj(target):
     else:
         yield result
 
-def _eval_csv(target, fieldnames=None):
+def _interpret_fieldnames(target, fieldnames):
+    try:
+        fieldname_line_number = int(fieldnames)
+    except (ValueError, TypeError):
+        return fieldnames
+    reader = csv.reader(target)
+    if fieldnames == 0:
+        num_columns = len(reader.__next__())
+        fieldnames = ['Field%d' % (i+1) for i in range(num_columns)]
+    else:
+        for i in range(fieldname_line_number):
+            fieldnames = reader.__next__()
+    return fieldnames
+ 
+def _eval_csv(target, fieldnames=None, **kwargs):
     """
     Yields OrderedDicts from a CSV string
     """
-    # TODO: automatic FieldA, FieldB, etc
+    fieldnames = _interpret_fieldnames(target, fieldnames)
     reader = csv.DictReader(target, fieldnames=fieldnames)
     for row in reader:
         yield OrderedDict((k, row[k]) for k in reader.fieldnames)
+
+# end deserializers
 
 def _open(filename):
     """Opens a file in binary mode if its name ends with 'pickle'"""
@@ -242,7 +259,7 @@ class Source(object):
         for deserializer in self.deserializers:
             self.file.seek(0)
             try:
-                self.generator = deserializer(open_file)
+                self.generator = deserializer(open_file, fieldnames=self.fieldnames)
                 row_1 = self.generator.__next__()
                 self.file.seek(0)
                 if row_1:
@@ -251,7 +268,7 @@ class Source(object):
                         logging.info('false hit: reading `yaml` as a single string')
                         continue
                     self.file.seek(0)
-                    self.generator = deserializer(open_file)
+                    self.generator = deserializer(open_file, fieldnames=self.fieldnames)
                     self.deserializer = deserializer
                     return
                 else:
@@ -334,10 +351,18 @@ class Source(object):
         self._multiple_sources(generators)
 
     def __init__(self, src, limit=None, fieldnames=None):
+        """
+        For ``.csv`` and ``.xls``, field names will be taken from 
+        the first line of data found - unless ``fieldnames`` is given,
+        in which case, it will override.  For ``.xls``, ``fieldnames``
+        may be an integer, in which case it will be the (1-based) row number
+        field names will be taken from (rows before that will be discarded).
+        """
         self.counter = 0
         self.limit = limit
         self.deserializers = []
         self.table_name = 'Table%d' % (Source.table_count)
+        self.fieldnames = fieldnames
         Source.table_count += 1
         if isinstance(src, MongoCollection):
             self._source_is_mongo(src)

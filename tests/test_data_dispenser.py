@@ -78,11 +78,12 @@ class TestURLreader(unittest.TestCase):
 
     def test_filenames(self):
         for (filename, stem, ext, expectation) in expectations():
-            url = "http://127.0.0.1:8000/%s" % filename
-            src = self.keep_trying(url)
-            result = list(src)
-            self.assertEqual(result, expectation,
-                             msg="%s, from local webserver" % filename)
+            if '#' not in filename:
+                url = "http://127.0.0.1:8000/%s" % filename
+                src = self.keep_trying(url)
+                result = list(src)
+                self.assertEqual(result, expectation,
+                                 msg="%s, from local webserver" % filename)
         
 
 class Testdata_dispenser(unittest.TestCase):
@@ -92,13 +93,20 @@ class Testdata_dispenser(unittest.TestCase):
 
     def test_filenames(self):
         for (filename, stem, ext, expectation) in expectations():
-            src = sources.Source(here(filename))
+            fieldnames = None
+            if '#headers' in filename:
+                fieldnames = stem.split('#')[2]
+                try:
+                    fieldnames = int(fieldnames)
+                except ValueError:
+                    fieldnames = fieldnames.split('-')
+            src = sources.Source(here(filename), fieldnames=fieldnames)
             result = list(src)
             self.assertEqual(result, expectation,
                              msg="%s, by filename" % filename)
 
             # check that we can limit result size
-            src = sources.Source(here(filename), limit=1)
+            src = sources.Source(here(filename), limit=1, fieldnames=fieldnames)
             self.assertEqual(list(src), expectation[:1],
                              msg='%s, limiting to 1')
 
@@ -107,14 +115,14 @@ class Testdata_dispenser(unittest.TestCase):
 
             # now test against an open file object
             with sources._open(here(filename)) as infile:
-                src = sources.Source(infile)
+                src = sources.Source(infile, fieldnames=fieldnames)
                 self.assertEqual(list(src), expectation,
                                  msg="%s, by file obj" % filename)
 
             # now test against the text contents
             if not filename.endswith('.pickle'):
                 with open(here(filename)) as infile:
-                    src = sources.Source(infile.read())
+                    src = sources.Source(infile.read(), fieldnames=fieldnames)
                     self.assertEqual(list(src), expectation,
                                      msg="%s, by contents" % filename)
 
