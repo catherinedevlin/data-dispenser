@@ -38,6 +38,11 @@ try:
 except ImportError:
     logging.info("Could not import ``xlrd``, will not load from .xls")
     xlrd = None
+try:
+    import bs4
+except ImportError:
+    logging.info("Could not import ``bs4 (beautifulsoup)``, will not load from HTML")
+    bs4 = None
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
@@ -125,6 +130,9 @@ def _ensure_rows(result):
             result = [result, ]
     return result
 
+class ParseException(Exception):
+    pass
+
 # begin deserializers
 
 def _eval_xml(target, **kwargs):
@@ -176,6 +184,32 @@ def _eval_csv(target, fieldnames=None, **kwargs):
     for row in reader:
         yield OrderedDict((k, row[k]) for k in reader.fieldnames)
 
+def _table_score(tbl):
+    n_rows = len(tbl.findAll('tr', recursive=False))
+    n_headings = len(tbl.tr.findAll('th', recursive=False))
+    n_columns = len(tbl.tr.findAll('td', recursive=False))
+    return n_columns * 3 + n_headings * 10 + n_columns
+    
+def _html_to_odicts(html, **kwargs):
+    soup = bs4.BeautifulSoup(html)
+    tables = sorted(soup.find_all('table'), key=_table_score, reverse=True)
+    if not tables:
+        raise ParseException('No HTML tables found')
+    tbl = tables[0]
+    skips = 1
+    if tbl.tr.th:
+        headers = [th.text for th in tbl.tr.find_all('th', recursive=False)]
+    else:
+        headers = [td.text for td in tbl.tr.find_all('td', recursive-False)]
+    for (col_num, header) in enumerate(headers):
+        header = header or "Field%d" % (col_num + 1)
+    for tr in tbl.find_all('tr', recursive=False):
+        if skips > 0:
+            skips -= 1
+            continue
+        row = [td.text for td in tr.find_all('td')]
+        yield OrderedDict(zip(headers, row))
+        
 # end deserializers
 
 def _open(filename):
@@ -233,10 +267,13 @@ class Source(object):
                          '.yml': [ordered_yaml_load, ],
                          '.csv': [_eval_csv, ],
                          '.xml': [_eval_xml, ],
+                         '.html': [_html_to_odicts, ],
+                         '.htm': [_html_to_odicts, ],
                          '.pickle': [pickle_loader, ],
                          }
     eval_funcs_by_ext['*'] = eval_funcs_by_ext['.pickle'] + \
                              [_eval_file_obj, ] + \
+                             eval_funcs_by_ext['.html'] + \
                              eval_funcs_by_ext['.xml'] + \
                              eval_funcs_by_ext['.json'] + \
                              eval_funcs_by_ext['.yaml'] + \
