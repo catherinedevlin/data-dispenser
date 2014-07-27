@@ -57,8 +57,10 @@ class TestURLreader(unittest.TestCase):
 
     def setUp(self):
         command = "python -m http.server"
+        print(os.path.dirname(__file__))
+        this_dir = os.path.dirname(os.path.realpath(__file__))
         self.webserver = subprocess.Popen(command.split(),
-                                          cwd=os.path.dirname(__file__))
+                                          cwd=this_dir)
 
     def tearDown(self):
         self.webserver.terminate()
