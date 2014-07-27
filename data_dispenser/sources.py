@@ -17,6 +17,7 @@ import os.path
 import pickle
 import pprint
 import sys
+import urllib.parse
 import xml.etree.ElementTree as et
 try:
     import yaml
@@ -221,6 +222,9 @@ def _open(filename):
     input_source = open(filename, file_mode)
     return input_source
 
+def filename_from_url(url):
+    return os.path.splitext(os.path.basename(urllib.parse.urlsplit(url).path))[0]
+
 class NamedIter(object):
     "Hack to let us assign attributes to an iterator"
 
@@ -339,6 +343,7 @@ class Source(object):
         self.generator = itertools.chain.from_iterable(subsources)
 
     def _source_is_url(self, src):
+        self.table_name = filename_from_url(src)
         if not requests:
             raise ImportError('must ``pip install requests to read from web``')
         (core_url, ext) = os.path.splitext(src)
