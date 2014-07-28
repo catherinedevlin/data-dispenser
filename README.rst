@@ -39,6 +39,7 @@ Data input formats supported
 * ``eval``-able Python
 * xls
 * xml (experimental)
+* HTML with ``<table>``s
 
 Multiple files
 ..............

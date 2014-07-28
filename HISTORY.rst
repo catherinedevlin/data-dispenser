@@ -20,3 +20,8 @@ History
 * Support URLs
 * Support wildcards
 
+0.2.1 (2014-27-14)
+++++++++++++++++++
+
+* Support .html
+
