@@ -25,3 +25,7 @@ History
 
 * Support .html
 
+0.2.2 (2014-27-14)
+++++++++++++++++++
+
+* Fix but with .html tables with <thead> 
