@@ -16,6 +16,7 @@ import logging
 import os.path
 import pickle
 import pprint
+import re
 import sys
 import urllib.parse
 import xml.etree.ElementTree as et
@@ -186,10 +187,13 @@ def _eval_csv(target, fieldnames=None, **kwargs):
         yield OrderedDict((k, row[k]) for k in reader.fieldnames)
 
 def _table_score(tbl):
-    n_rows = len(tbl.findAll('tr', recursive=False))
-    n_headings = len(tbl.tr.findAll('th', recursive=False))
+    n_rows = len((tbl.tbody or tbl).findAll('tr', recursive=False))
+    n_headings = len((tbl.thead or tbl).tr.findAll('th', recursive=False))
     n_columns = len(tbl.tr.findAll('td', recursive=False))
-    return n_columns * 3 + n_headings * 10 + n_columns
+    score = n_columns * 3 + n_headings * 10 + n_columns
+    if tbl.thead:
+        score += 3
+    return score
     
 def _html_to_odicts(html, **kwargs):
     soup = bs4.BeautifulSoup(html)
@@ -198,13 +202,13 @@ def _html_to_odicts(html, **kwargs):
         raise ParseException('No HTML tables found')
     tbl = tables[0]
     skips = 1
-    if tbl.tr.th:
-        headers = [th.text for th in tbl.tr.find_all('th', recursive=False)]
+    if (tbl.thead or tbl).tr.th:
+        headers = [th.text for th in (tbl.thead or tbl).tr.find_all('th', recursive=False)]
     else:
-        headers = [td.text for td in tbl.tr.find_all('td', recursive-False)]
+        headers = [td.text for td in (tbl.tbody or tbl).tr.find_all('td', recursive-False)]
     for (col_num, header) in enumerate(headers):
         header = header or "Field%d" % (col_num + 1)
-    for tr in tbl.find_all('tr', recursive=False):
+    for tr in (tbl.tbody or tbl).find_all('tr', recursive=False):
         if skips > 0:
             skips -= 1
             continue
@@ -342,16 +346,18 @@ class Source(object):
         self.limit = None  # impose limit only on the subsources
         self.generator = itertools.chain.from_iterable(subsources)
 
+    _actual_ext_finder = re.compile(r"^(\.[A-Za-z]*)")
     def _source_is_url(self, src):
         self.table_name = filename_from_url(src)
         if not requests:
             raise ImportError('must ``pip install requests to read from web``')
         (core_url, ext) = os.path.splitext(src)
+        ext = self._actual_ext_finder.search(ext).group(1)
         ext = ext.lower()
         response = requests.get(src)
-        if src.endswith('.xls'):
+        if ext.endswith('.xls'):
             return self._source_is_excel(response.content)
-        self.deserializers = self.eval_funcs_by_ext[ext or '*']
+        self.deserializers = self.eval_funcs_by_ext.get(ext or '*')
         if ext == '.pickle':
             self._deserialize(BytesIO(response.content))
         else:
