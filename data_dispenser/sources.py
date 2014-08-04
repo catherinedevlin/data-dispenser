@@ -48,7 +48,7 @@ except ImportError:
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
-                          object_pairs_hook=OrderedDict, **kwargs):
+                          object_pairs_hook=OrderedDict, *args, **kwargs):
         """
         Preserves order with OrderedDict as yaml is loaded
         Thanks to coldfix
@@ -137,25 +137,25 @@ class ParseException(Exception):
 
 # begin deserializers
 
-def _eval_xml(target, **kwargs):
+def _eval_xml(target, *args, **kwargs):
     root = et.parse(target).getroot()
     data = _element_to_odict(root)
     data = _first_list_in(data)
     return iter(data)
 
-def json_loader(target, **kwargs):
+def json_loader(target, *args, **kwargs):
     result = json.load(target, object_pairs_hook=OrderedDict)
     result = _ensure_rows(result)
     return iter(result)
 json_loader.__name__ = 'json_loader'
 
-def pickle_loader(target, **kwargs):
+def pickle_loader(target, *args, **kwargs):
     result = pickle.load(target)
     result = _ensure_rows(result)
     return iter(result)
 pickle_loader.__name__ = 'pickle_loader'
 
-def _eval_file_obj(target, **kwargs):
+def _eval_file_obj(target, *args, **kwargs):
     result = eval(target.read())
     if isinstance(result, list):
         for itm in result:
@@ -177,7 +177,7 @@ def _interpret_fieldnames(target, fieldnames):
             fieldnames = reader.__next__()
     return fieldnames
  
-def _eval_csv(target, fieldnames=None, **kwargs):
+def _eval_csv(target, fieldnames=None, *args, **kwargs):
     """
     Yields OrderedDicts from a CSV string
     """
@@ -195,7 +195,7 @@ def _table_score(tbl):
         score += 3
     return score
     
-def _html_to_odicts(html, **kwargs):
+def _html_to_odicts(html, *args, **kwargs):
     soup = bs4.BeautifulSoup(html)
     tables = sorted(soup.find_all('table'), key=_table_score, reverse=True)
     if not tables:
