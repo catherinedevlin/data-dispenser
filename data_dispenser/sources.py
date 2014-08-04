@@ -196,6 +196,8 @@ def _table_score(tbl):
     return score
     
 def _html_to_odicts(html, *args, **kwargs):
+    if not bs4:
+        raise(ImportError, "BeautifulSoup4 not installed")
     soup = bs4.BeautifulSoup(html)
     tables = sorted(soup.find_all('table'), key=_table_score, reverse=True)
     if not tables:
