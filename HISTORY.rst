@@ -35,4 +35,7 @@ History
 
 * Fix for URLs with no file extension
 
+0.2.4 (2014-09-14)
+++++++++++++++++++
 
+* Better error messages on parse failure
