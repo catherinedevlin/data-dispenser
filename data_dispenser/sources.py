@@ -354,10 +354,10 @@ class Source(object):
         if not requests:
             raise ImportError('must ``pip install requests to read from web``')
         (core_url, ext) = os.path.splitext(src)
-        ext = self._actual_ext_finder.search(ext).group(1)
-        ext = ext.lower()
+        ext = self._actual_ext_finder.search(ext)
+        ext = ext and ext.group(1).lower()
         response = requests.get(src)
-        if ext.endswith('.xls'):
+        if ext and ext.endswith('.xls'):
             return self._source_is_excel(response.content)
         self.deserializers = self.eval_funcs_by_ext.get(ext or '*')
         if ext == '.pickle':

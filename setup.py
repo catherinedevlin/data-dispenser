@@ -19,7 +19,7 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 setup(
     name='data_dispenser',
-    version='0.2.2',
+    version='0.2.3',
     description='Loads data from various formats',
     long_description=readme + '\n\n' + history,
     author='Catherine Devlin',

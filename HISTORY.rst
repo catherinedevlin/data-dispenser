@@ -28,4 +28,11 @@ History
 0.2.2 (2014-27-14)
 ++++++++++++++++++
 
-* Fix but with .html tables with <thead> 
+* Fix bug with .html tables with <thead> 
+
+0.2.3 (2014-09-14)
+++++++++++++++++++
+
+* Fix for URLs with no file extension
+
+
