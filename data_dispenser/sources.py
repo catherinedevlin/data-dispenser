@@ -197,7 +197,7 @@ def _table_score(tbl):
     
 def _html_to_odicts(html, *args, **kwargs):
     if not bs4:
-        raise(ImportError, "BeautifulSoup4 not installed")
+        raise ImportError("BeautifulSoup4 not installed")
     soup = bs4.BeautifulSoup(html)
     tables = sorted(soup.find_all('table'), key=_table_score, reverse=True)
     if not tables:
@@ -303,6 +303,7 @@ class Source(object):
 
     def _deserialize(self, open_file):
         self.file = open_file
+        errors = []
         for deserializer in self.deserializers:
             self.file.seek(0)
             try:
@@ -328,8 +329,9 @@ class Source(object):
             except Exception as e:
                 logging.info('%s failed to deserialize %s' % (deserializer, open_file))
                 logging.info(str(e))
-        raise SyntaxError("%s: Could not deserialize %s (tried %s)" % (
-            self.table_name, open_file, ", ".join(self.deserializers)))
+                errors.append(str(e))
+        raise SyntaxError("%s: Could not deserialize %s (tried %s)\nErrors:\n%s" % (
+            self.table_name, open_file, ", ".join(str(s) for s in self.deserializers), "\n".join(errors)))
 
     def _source_is_path(self, src):
         (file_path, file_extension) = os.path.splitext(src)
@@ -355,7 +357,7 @@ class Source(object):
             raise ImportError('must ``pip install requests to read from web``')
         (core_url, ext) = os.path.splitext(src)
         ext = self._actual_ext_finder.search(ext)
-        ext = ext and ext.group(1).lower()
+        ext = (ext and ext.group(1).lower()) or '.html'
         response = requests.get(src)
         if ext and ext.endswith('.xls'):
             return self._source_is_excel(response.content)
@@ -401,13 +403,13 @@ class Source(object):
         self._multiple_sources(generators)
 
     def __init__(self, src, limit=None, fieldnames=None):
-        """
+        '''
         For ``.csv`` and ``.xls``, field names will be taken from 
         the first line of data found - unless ``fieldnames`` is given,
         in which case, it will override.  For ``.xls``, ``fieldnames``
         may be an integer, in which case it will be the (1-based) row number
         field names will be taken from (rows before that will be discarded).
-        """
+        '''
         self.counter = 0
         self.limit = limit
         self.deserializers = []
