@@ -374,7 +374,24 @@ class Source(object):
         self.deserializers = self.eval_funcs_by_ext['*']
         self._deserialize(src)
 
-    def _source_is_excel(self, spreadsheet):
+    def _source_is_excel_worksheet(self, sheet, name):
+        headings = ["Col%d" % c for c in range(1, sheet.ncols + 1)]
+        data = []
+        for row_n in range(sheet.nrows):
+            row_has_data = max(bool(v) for v in sheet.row_values(row_n))
+            if row_has_data:
+                headings = [heading if heading else default_heading
+                            for (heading, default_heading) 
+                            in itertools.zip_longest(sheet.row_values(row_n), headings)]
+                row_n += 1
+                break
+        data = [OrderedDict(zip(headings, sheet.row_values(r)))
+                            for r in range(row_n,sheet.nrows)]
+        generator = NamedIter(iter(data))       
+        generator.name = "%s-%s" % (name, sheet.name)
+        return generator
+
+    def _source_is_excel(self, spreadsheet, sheet='*'):
         if not xlrd:
             raise ImportError('must ``pip install xlrd``')
         if len(spreadsheet) < 84 and spreadsheet.endswith('xls'):
@@ -383,26 +400,23 @@ class Source(object):
         else:
             workbook = xlrd.open_workbook(file_contents=spreadsheet)
             name = "excel"
-        generators = []
-        for sheet in workbook.sheets():
-            headings = ["Col%d" % c for c in range(1, sheet.ncols + 1)]
-            data = []
-            for row_n in range(sheet.nrows):
-                row_has_data = max(bool(v) for v in sheet.row_values(row_n))
-                if row_has_data:
-                    headings = [heading if heading else default_heading
-                                for (heading, default_heading) 
-                                in itertools.zip_longest(sheet.row_values(row_n), headings)]
-                    row_n += 1
-                    break
-            data = [OrderedDict(zip(headings, sheet.row_values(r)))
-                                for r in range(row_n,sheet.nrows)]
-            generator = NamedIter(iter(data))
-            generator.name = "%s-%s" % (name, sheet.name)
-            generators.append(generator)
-        self._multiple_sources(generators)
+        if sheet == '*':
+            generators = []            
+            for sheet in workbook.sheets():
+                generators.append(self._source_is_excel_worksheet(sheet, name))
+            self._multiple_sources(generators)
+        else:
+            try:
+                sheet = workbook.sheets()[int(sheet)]
+            except ValueError:
+                try:
+                    workbook.sheet_names().index(sheet)
+                except ValueError:
+                    raise Exception("Sheet name or index %s not in workbook %s" % (sheet, name))
+            self.generator = self._source_is_excel_worksheet(sheet, name)
+            self.table_name = self.generator.name     
 
-    def __init__(self, src, limit=None, fieldnames=None):
+    def __init__(self, src, limit=None, fieldnames=None, sheet='*'):
         '''
         For ``.csv`` and ``.xls``, field names will be taken from 
         the first line of data found - unless ``fieldnames`` is given,
@@ -432,7 +446,7 @@ class Source(object):
         try:
             if os.path.isfile(src):
                 if src.endswith('.xls'):
-                    self._source_is_excel(src)
+                    self._source_is_excel(src, sheet=sheet)
                 else:
                     self._source_is_path(src)
                 return
