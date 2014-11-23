@@ -16,8 +16,10 @@ import datetime
 import os.path
 import time
 import requests
+import tempfile
+import sqlite3
 
-from data_dispenser import sources
+from data_dispenser import sources, sqlalchemy_table_sources
 from tests.file_stems import split_filenames
 
 class TestReadMongo(unittest.TestCase):
@@ -87,6 +89,35 @@ class TestURLreader(unittest.TestCase):
                 self.assertEqual(result, expectation,
                                  msg="%s, from local webserver" % filename)
         
+        
+class Test_Sqlite(unittest.TestCase):
+    
+    def setUp(self):
+        self.db = tempfile.NamedTemporaryFile()
+        self.conn = sqlite3.connect(self.db.name)
+        self.cursor = self.conn.cursor()
+        sqls = [ """
+        CREATE TABLE knights (
+                name VARCHAR(10) NOT NULL, 
+                dob DATETIME, 
+                kg DECIMAL(6, 4), 
+                brave BOOLEAN NOT NULL, 
+                CHECK (brave IN (0, 1))
+        )""",
+        "INSERT INTO knights (name, dob, kg, brave) VALUES ('Lancelot', '0471-01-09 00:00:00', 82, 1)",
+        "INSERT INTO knights (name, kg, brave) VALUES ('Gawain', 69.2, 1)",
+        "INSERT INTO knights (name, dob, brave) VALUES ('Robin', '0471-01-09 00:00:00', 0)",
+        "INSERT INTO knights (name, kg, brave) VALUES ('Reepacheep', 0.0691, 1)"
+        ]
+        for sql in sqls:
+            self.cursor.execute(sql)
+        self.conn.commit()
+            
+    def test_read_db(self):
+        for tbl in sqlalchemy_table_sources('sqlite:///%s' % self.db.name):
+            result = list(tbl)
+            self.assertIn('Reepacheep', [r.name for r in result])
+
 
 class Testdata_dispenser(unittest.TestCase):
 

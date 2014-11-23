@@ -11,6 +11,7 @@ def split_filenames():
         not filename.endswith('.pyc') and \
         not filename.endswith('.result') and \
         not filename.endswith('.ipynb') and \
+        not filename.endswith('.log') and \
         not filename.startswith('__'):
             (stem, ext) = filename.split('.', 1)
             yield (os.path.split(filename)[1], stem, ext)

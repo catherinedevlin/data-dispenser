@@ -45,6 +45,12 @@ try:
 except ImportError:
     logging.info("Could not import ``bs4 (beautifulsoup)``, will not load from HTML")
     bs4 = None
+try:
+    import sqlalchemy
+except ImportError:
+    logging.info("Could not import ``sqlalchemy``, will not load from relational databases")
+    sqlalchemy = None
+    
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
@@ -231,6 +237,7 @@ def _open(filename):
 def filename_from_url(url):
     return os.path.splitext(os.path.basename(urllib.parse.urlsplit(url).path))[0]
 
+
 class NamedIter(object):
     "Hack to let us assign attributes to an iterator"
 
@@ -416,7 +423,15 @@ class Source(object):
             self.generator = self._source_is_excel_worksheet(sheet, name)
             self.table_name = self.generator.name     
 
-    def __init__(self, src, limit=None, fieldnames=None, sheet='*'):
+    def _source_is_sqlalchemy_metadata(self, src, table):
+        meta = src
+        connection = meta.bind.connect()        
+        slct = sqlalchemy.sql.select([meta.tables[table]])
+        result = connection.execute(slct)
+        self.generator = NamedIter(iter(result))
+        self.generator.name = table
+
+    def __init__(self, src, limit=None, fieldnames=None, table='*'):
         '''
         For ``.csv`` and ``.xls``, field names will be taken from 
         the first line of data found - unless ``fieldnames`` is given,
@@ -430,6 +445,9 @@ class Source(object):
         self.table_name = 'Table%d' % (Source.table_count)
         self.fieldnames = fieldnames
         Source.table_count += 1
+        if isinstance(src, sqlalchemy.sql.schema.MetaData):
+            self._source_is_sqlalchemy_metadata(src, table)
+            return
         if isinstance(src, MongoCollection):
             self._source_is_mongo(src)
             return
@@ -446,7 +464,7 @@ class Source(object):
         try:
             if os.path.isfile(src):
                 if src.endswith('.xls'):
-                    self._source_is_excel(src, sheet=sheet)
+                    self._source_is_excel(src, sheet=table)
                 else:
                     self._source_is_path(src)
                 return
@@ -492,10 +510,25 @@ class Source(object):
         with open(filename, 'w') as outfile:
             outfile.write(pprint.pformat(all_data))
 
+def sqlalchemy_table_sources(url):
+    engine = sqlalchemy.create_engine(url)
+    meta = sqlalchemy.MetaData(bind=engine)
+    meta.reflect()
+    for table_name in meta.tables:
+        yield Source(meta, table=table_name)
+
+sqlalchemy_connection_parser = re.compile(r"^(\w+)://")
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         for target in sys.argv[1:]:
+            if sqlalchemy and sqlalchemy_connection_parser.search(target):
+                try:
+                    for src in sqlalchemy_table_sources(target):
+                        pprint.pprint(list(Source(src)))
+                    continue
+                except sqlalchemy.exc.NoSuchModuleError:
+                    pass
             pprint.pprint(list(Source(target)))
     else:
         doctest.testmod(optionflags=doctest.NORMALIZE_WHITESPACE)
