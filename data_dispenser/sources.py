@@ -50,7 +50,7 @@ try:
 except ImportError:
     logging.info("Could not import ``sqlalchemy``, will not load from relational databases")
     sqlalchemy = None
-    
+
 
 if yaml:
     def ordered_yaml_load(stream, Loader=yaml.Loader,
@@ -117,13 +117,13 @@ def _first_list_in(element):
 def _ensure_rows(result):
     """data_dispenser is for rowlike sources.  If the data source
        evaluates to a single dict instead of a listlike object,
-       transform a dict of dicts into a list of dicts, or 
+       transform a dict of dicts into a list of dicts, or
        return a list (that contains the dict as its sole row).
        >>> pprint.pprint(_ensure_rows({"a": 1, "b": 2}))
        [{'a': 1, 'b': 2}]
        >>> pprint.pprint(_ensure_rows({"a": {"a1": 1, "a2": 2}, "b": {"b1": 1, "b2": 2}}))
        [{'a1': 1, 'a2': 2, 'name_': 'a'}, {'b1': 1, 'b2': 2, 'name_': 'b'}]
-       
+
        otherwise just don't mess with it
        >>> pprint.pprint(_ensure_rows([{"a1": 1, "a2": 2}, {"b1": 1, "b2": 2}]))
        [{'a1': 1, 'a2': 2}, {'b1': 1, 'b2': 2}]
@@ -182,7 +182,7 @@ def _interpret_fieldnames(target, fieldnames):
         for i in range(fieldname_line_number):
             fieldnames = reader.__next__()
     return fieldnames
- 
+
 def _eval_csv(target, fieldnames=None, *args, **kwargs):
     """
     Yields OrderedDicts from a CSV string
@@ -200,7 +200,7 @@ def _table_score(tbl):
     if tbl.thead:
         score += 3
     return score
-    
+
 def _html_to_odicts(html, *args, **kwargs):
     if not bs4:
         raise ImportError("BeautifulSoup4 not installed")
@@ -222,7 +222,7 @@ def _html_to_odicts(html, *args, **kwargs):
             continue
         row = [td.text for td in tr.find_all('td')]
         yield OrderedDict(zip(headers, row))
-        
+
 # end deserializers
 
 def _open(filename):
@@ -388,13 +388,13 @@ class Source(object):
             row_has_data = max(bool(v) for v in sheet.row_values(row_n))
             if row_has_data:
                 headings = [heading if heading else default_heading
-                            for (heading, default_heading) 
+                            for (heading, default_heading)
                             in itertools.zip_longest(sheet.row_values(row_n), headings)]
                 row_n += 1
                 break
         data = [OrderedDict(zip(headings, sheet.row_values(r)))
                             for r in range(row_n,sheet.nrows)]
-        generator = NamedIter(iter(data))       
+        generator = NamedIter(iter(data))
         generator.name = "%s-%s" % (name, sheet.name)
         return generator
 
@@ -408,7 +408,7 @@ class Source(object):
             workbook = xlrd.open_workbook(file_contents=spreadsheet)
             name = "excel"
         if sheet == '*':
-            generators = []            
+            generators = []
             for sheet in workbook.sheets():
                 generators.append(self._source_is_excel_worksheet(sheet, name))
             self._multiple_sources(generators)
@@ -421,11 +421,11 @@ class Source(object):
                 except ValueError:
                     raise Exception("Sheet name or index %s not in workbook %s" % (sheet, name))
             self.generator = self._source_is_excel_worksheet(sheet, name)
-            self.table_name = self.generator.name     
+            self.table_name = self.generator.name
 
     def _source_is_sqlalchemy_metadata(self, src, table):
         meta = src
-        connection = meta.bind.connect()        
+        connection = meta.bind.connect()
         slct = sqlalchemy.sql.select([meta.tables[table]])
         result = connection.execute(slct)
         self.generator = NamedIter(iter(result))
@@ -433,7 +433,7 @@ class Source(object):
 
     def __init__(self, src, limit=None, fieldnames=None, table='*'):
         '''
-        For ``.csv`` and ``.xls``, field names will be taken from 
+        For ``.csv`` and ``.xls``, field names will be taken from
         the first line of data found - unless ``fieldnames`` is given,
         in which case, it will override.  For ``.xls``, ``fieldnames``
         may be an integer, in which case it will be the (1-based) row number
