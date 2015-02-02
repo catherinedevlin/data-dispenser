@@ -39,3 +39,9 @@ History
 ++++++++++++++++++
 
 * Better error messages on parse failure
+
+0.2.5 (2015-02-01)
+++++++++++++++++++
+
+* Directly interpret SQLAlchemy sources
+

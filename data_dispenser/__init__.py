@@ -5,4 +5,4 @@ from data_dispenser.sources import Source, sqlalchemy_table_sources
 
 __author__ = 'Catherine Devlin'
 __email__ = 'catherine.devlin@gmail.com'
-__version__ = '0.2.4'
+__version__ = '0.2.5'
