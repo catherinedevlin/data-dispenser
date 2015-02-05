@@ -45,3 +45,8 @@ History
 
 * Directly interpret SQLAlchemy sources
 
+0.2.5.1 (2015-02-04)
+++++++++++++++++++++
+
+* Emit SQLAlchemy tables in order required by foreign keys
+
