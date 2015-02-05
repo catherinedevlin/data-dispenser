@@ -514,8 +514,8 @@ def sqlalchemy_table_sources(url):
     engine = sqlalchemy.create_engine(url)
     meta = sqlalchemy.MetaData(bind=engine)
     meta.reflect()
-    for table_name in meta.tables:
-        yield Source(meta, table=table_name)
+    for table in meta.sorted_tables:
+        yield Source(meta, table=table.name)
 
 sqlalchemy_connection_parser = re.compile(r"^(\w+)://")
 

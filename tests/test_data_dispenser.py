@@ -88,20 +88,20 @@ class TestURLreader(unittest.TestCase):
                 result = list(src)
                 self.assertEqual(result, expectation,
                                  msg="%s, from local webserver" % filename)
-        
-        
+
+
 class Test_Sqlite(unittest.TestCase):
-    
+
     def setUp(self):
         self.db = tempfile.NamedTemporaryFile()
         self.conn = sqlite3.connect(self.db.name)
         self.cursor = self.conn.cursor()
         sqls = [ """
         CREATE TABLE knights (
-                name VARCHAR(10) NOT NULL, 
-                dob DATETIME, 
-                kg DECIMAL(6, 4), 
-                brave BOOLEAN NOT NULL, 
+                name VARCHAR(10) NOT NULL,
+                dob DATETIME,
+                kg DECIMAL(6, 4),
+                brave BOOLEAN NOT NULL,
                 CHECK (brave IN (0, 1))
         )""",
         "INSERT INTO knights (name, dob, kg, brave) VALUES ('Lancelot', '0471-01-09 00:00:00', 82, 1)",
@@ -112,7 +112,7 @@ class Test_Sqlite(unittest.TestCase):
         for sql in sqls:
             self.cursor.execute(sql)
         self.conn.commit()
-            
+
     def test_read_db(self):
         for tbl in sqlalchemy_table_sources('sqlite:///%s' % self.db.name):
             result = list(tbl)
@@ -174,7 +174,6 @@ class Testdata_dispenser(unittest.TestCase):
 
     def tearDown(self):
         pass
-
 
 if __name__ == '__main__':
     unittest.main()
