@@ -425,6 +425,7 @@ class Source(object):
 
     def _source_is_sqlalchemy_metadata(self, src, table):
         meta = src
+        self.db_engine = meta.bind
         connection = meta.bind.connect()
         slct = sqlalchemy.sql.select([meta.tables[table]])
         result = connection.execute(slct)
@@ -444,6 +445,7 @@ class Source(object):
         self.deserializers = []
         self.table_name = 'Table%d' % (Source.table_count)
         self.fieldnames = fieldnames
+        self.db_engine = None
         Source.table_count += 1
         if isinstance(src, sqlalchemy.sql.schema.MetaData):
             self._source_is_sqlalchemy_metadata(src, table)
